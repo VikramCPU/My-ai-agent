@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>AI Coding Agent — VikramCPU</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --bg2: #161b22;
+    --bg3: #21262d;
+    --border: #30363d;
+    --brand: #7c3aed;
+    --brand-light: #a78bfa;
+    --green: #3fb950;
+    --red: #f85149;
+    --yellow: #d29922;
+    --text: #e6edf3;
+    --text2: #8b949e;
+    --text3: #6e7681;
+    --user-bg: #1f2937;
+    --ai-bg: #161b22;
+    --radius: 12px;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; font-family: var(--font); background: var(--bg); color: var(--text); overflow: hidden; }
+
+  /* ── Layout ── */
+  #app { display: flex; flex-direction: column; height: 100vh; max-width: 900px; margin: 0 auto; }
+  header { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-shrink: 0; }
+  header h1 { font-size: 15px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; }
+  header h1 span.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); display: inline-block; flex-shrink: 0; }
+  header h1 .subtitle { font-size: 11px; font-weight: 400; color: var(--text2); }
+  .header-btns { display: flex; gap: 6px; }
+  .btn-icon { background: var(--bg3); border: 1px solid var(--border); color: var(--text2); border-radius: 8px; padding: 6px 10px; font-size: 13px; cursor: pointer; transition: all .15s; }
+  .btn-icon:hover { border-color: var(--brand-light); color: var(--brand-light); }
+
+  /* ── Settings Panel ── */
+  #settings { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 12px 16px; flex-shrink: 0; display: none; }
+  #settings.open { display: block; }
+  #settings h2 { font-size: 12px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; }
+  .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .settings-grid.full { grid-template-columns: 1fr; }
+  label { font-size: 11px; color: var(--text2); display: block; margin-bottom: 3px; }
+  input, select, textarea { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 13px; padding: 7px 10px; font-family: var(--font); outline: none; transition: border .15s; }
+  input:focus, select:focus, textarea:focus { border-color: var(--brand-light); }
+  select option { background: var(--bg3); }
+  .preset-btns { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+  .preset-btn { background: var(--bg3); border: 1px solid var(--border); color: var(--text2); border-radius: 6px; padding: 4px 10px; font-size: 11px; cursor: pointer; transition: all .15s; }
+  .preset-btn:hover, .preset-btn.active { border-color: var(--brand); color: var(--brand-light); background: rgba(124,58,237,.1); }
+  .btn-save { background: var(--brand); border: none; color: #fff; border-radius: 8px; padding: 8px 18px; font-size: 13px; font-weight: 600; cursor: pointer; margin-top: 10px; transition: opacity .15s; }
+  .btn-save:hover { opacity: .85; }
+  .status-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; padding: 3px 8px; border-radius: 20px; margin-top: 8px; }
+  .status-pill.ok { background: rgba(63,185,80,.1); color: var(--green); border: 1px solid rgba(63,185,80,.3); }
+  .status-pill.err { background: rgba(248,81,73,.1); color: var(--red); border: 1px solid rgba(248,81,73,.3); }
+
+  /* ── Messages ── */
+  #messages { flex: 1; overflow-y: auto; padding: 12px 16px; display: flex; flex-direction: column; gap: 14px; scroll-behavior: smooth; }
+  #messages::-webkit-scrollbar { width: 4px; }
+  #messages::-webkit-scrollbar-track { background: transparent; }
+  #messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .msg { display: flex; gap: 10px; animation: fadeIn .2s ease; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+  .msg.user { flex-direction: row-reverse; }
+  .avatar { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; border: 2px solid var(--border); }
+  .avatar.ai { background: rgba(124,58,237,.2); border-color: rgba(124,58,237,.4); }
+  .avatar.user { background: rgba(63,185,80,.15); border-color: rgba(63,185,80,.3); }
+  .bubble { max-width: 85%; background: var(--ai-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px; font-size: 13.5px; line-height: 1.65; }
+  .msg.user .bubble { background: var(--user-bg); border-color: rgba(124,58,237,.3); text-align: left; }
+  .bubble .time { font-size: 10px; color: var(--text3); margin-top: 5px; }
+
+  /* Markdown-ish rendering */
+  .bubble h1,.bubble h2,.bubble h3 { color: var(--brand-light); margin: 8px 0 4px; font-size: 14px; }
+  .bubble p { margin-bottom: 6px; }
+  .bubble ul,.bubble ol { padding-left: 18px; margin-bottom: 6px; }
+  .bubble li { margin-bottom: 2px; }
+  .bubble code { background: rgba(255,255,255,.08); border-radius: 4px; padding: 1px 5px; font-family: 'Fira Code','Courier New',monospace; font-size: 12px; color: #79c0ff; }
+  .bubble pre { background: #0d1117; border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; overflow-x: auto; margin: 6px 0; }
+  .bubble pre code { background: none; padding: 0; color: #e6edf3; font-size: 12px; }
+  .bubble strong { color: var(--brand-light); }
+  .bubble a { color: var(--brand-light); }
+  .bubble .copy-btn { float: right; background: var(--bg3); border: 1px solid var(--border); color: var(--text2); border-radius: 5px; padding: 2px 7px; font-size: 10px; cursor: pointer; margin-top: -2px; }
+  .bubble .copy-btn:hover { color: var(--brand-light); }
+
+  /* Typing indicator */
+  .typing { display: flex; align-items: center; gap: 4px; padding: 4px 0; }
+  .typing span { width: 6px; height: 6px; background: var(--brand-light); border-radius: 50%; animation: bounce .8s ease infinite; }
+  .typing span:nth-child(2) { animation-delay: .15s; }
+  .typing span:nth-child(3) { animation-delay: .3s; }
+  @keyframes bounce { 0%,80%,100%{transform:scale(.8);opacity:.5} 40%{transform:scale(1.2);opacity:1} }
+
+  /* ── Quick Commands ── */
+  #quick-bar { padding: 6px 16px; flex-shrink: 0; overflow-x: auto; white-space: nowrap; }
+  #quick-bar::-webkit-scrollbar { height: 2px; }
+  .quick-btn { display: inline-block; background: var(--bg3); border: 1px solid var(--border); color: var(--text2); border-radius: 16px; padding: 4px 12px; font-size: 11.5px; cursor: pointer; margin-right: 5px; transition: all .15s; }
+  .quick-btn:hover { border-color: var(--brand); color: var(--brand-light); }
+
+  /* ── Input Area ── */
+  #input-area { background: var(--bg2); border-top: 1px solid var(--border); padding: 10px 16px 12px; flex-shrink: 0; }
+  .input-row { display: flex; gap: 8px; align-items: flex-end; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 10px; transition: border .15s; }
+  .input-row:focus-within { border-color: var(--brand-light); }
+  #msg-input { flex: 1; background: none; border: none; outline: none; color: var(--text); font-size: 14px; font-family: var(--font); resize: none; max-height: 120px; min-height: 22px; line-height: 1.5; }
+  #msg-input::placeholder { color: var(--text3); }
+  #send-btn { background: var(--brand); border: none; color: #fff; width: 34px; height: 34px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: opacity .15s; }
+  #send-btn:disabled { opacity: .4; cursor: not-allowed; }
+  #send-btn:hover:not(:disabled) { opacity: .85; }
+  #stop-btn { background: var(--red); border: none; color: #fff; width: 34px; height: 34px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; display: none; }
+  .hint { font-size: 10.5px; color: var(--text3); text-align: center; margin-top: 5px; }
+
+  /* ── Responsive ── */
+  @media (max-width: 500px) {
+    .settings-grid { grid-template-columns: 1fr; }
+    .bubble { max-width: 90%; font-size: 13px; }
+  }
+
+  /* ── Toast ── */
+  #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: var(--bg3); border: 1px solid var(--border); color: var(--text); padding: 8px 18px; border-radius: 20px; font-size: 13px; opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 99; white-space: nowrap; }
+  #toast.show { opacity: 1; }
+
+  /* Provider indicator */
+  #provider-badge { font-size: 11px; background: rgba(124,58,237,.15); border: 1px solid rgba(124,58,237,.3); color: var(--brand-light); border-radius: 8px; padding: 3px 8px; white-space: nowrap; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- Header -->
+  <header>
+    <h1>
+      <span class="dot" id="status-dot"></span>
+      <div>
+        AI Coding Agent
+        <div class="subtitle">by VikramCPU</div>
+      </div>
+    </h1>
+    <div class="header-btns">
+      <span id="provider-badge">PocketAPI</span>
+      <button class="btn-icon" onclick="toggleSettings()" title="Settings">⚙️</button>
+      <button class="btn-icon" onclick="clearChat()" title="Clear chat">🗑️</button>
+    </div>
+  </header>
+
+  <!-- Settings Panel -->
+  <div id="settings">
+    <h2>⚡ AI Provider Settings</h2>
+
+    <div style="margin-bottom:8px;">
+      <label>Quick Presets</label>
+      <div class="preset-btns" id="preset-btns"></div>
+    </div>
+
+    <div class="settings-grid">
+      <div>
+        <label>Base URL (API Endpoint)</label>
+        <input type="text" id="cfg-url" placeholder="http://192.168.1.5:8080/v1" />
+      </div>
+      <div>
+        <label>Model Name</label>
+        <input type="text" id="cfg-model" placeholder="llama-3.1-8b-instruct" />
+      </div>
+    </div>
+    <div style="margin-top:8px;">
+      <label>API Key (leave blank for PocketAPI)</label>
+      <input type="password" id="cfg-key" placeholder="sk-... or blank" />
+    </div>
+    <div style="margin-top:8px;">
+      <label>System Prompt</label>
+      <textarea id="cfg-system" rows="3" placeholder="You are a helpful AI coding assistant..."></textarea>
+    </div>
+
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:4px;">
+      <button class="btn-save" onclick="saveSettings()">💾 Save & Connect</button>
+      <button class="btn-icon" onclick="testConnection()" style="margin:0;">🔌 Test</button>
+      <span id="conn-status"></span>
+    </div>
+  </div>
+
+  <!-- Messages -->
+  <div id="messages"></div>
+
+  <!-- Quick Commands -->
+  <div id="quick-bar"></div>
+
+  <!-- Input Area -->
+  <div id="input-area">
+    <div class="input-row">
+      <textarea id="msg-input" placeholder="Ask anything — GitHub, Android, code help..." rows="1"></textarea>
+      <button id="stop-btn" onclick="stopGeneration()" title="Stop">⏹</button>
+      <button id="send-btn" onclick="sendMessage()" title="Send (Enter)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+    <p class="hint">Enter → Send &nbsp;·&nbsp; Shift+Enter → New line &nbsp;·&nbsp; History auto-saved</p>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+//  CONFIG & STATE
+// ══════════════════════════════════════════
+const STORAGE_KEY = 'vikram_agent_config';
+const HISTORY_KEY = 'vikram_agent_history';
+const MAX_HISTORY = 60;
+
+const PRESETS = [
+  { name: '📱 PocketAPI (Phone)',  url: 'http://192.168.1.5:8080/v1', model: 'llama-3.1-8b-instruct',       key: '' },
+  { name: '⚡ Groq (Free)',        url: 'https://api.groq.com/openai/v1', model: 'llama-3.3-70b-versatile', key: '' },
+  { name: '🌐 OpenRouter',         url: 'https://openrouter.ai/api/v1',   model: 'meta-llama/llama-3.1-8b-instruct:free', key: '' },
+  { name: '🟢 NVIDIA NIM',         url: 'https://integrate.api.nvidia.com/v1', model: 'meta/llama-3.1-70b-instruct', key: '' },
+  { name: '🔵 OpenAI',             url: 'https://api.openai.com/v1',      model: 'gpt-4o-mini',            key: '' },
+  { name: '🔥 Local (LM Studio)',  url: 'http://localhost:1234/v1',       model: 'local-model',            key: '' },
+];
+
+const DEFAULT_SYSTEM = `You are an expert AI Coding Agent for VikramCPU.
+You help with: GitHub repos, Android APK development, code analysis, bug fixing, generating files, and all coding tasks.
+Be concise, use markdown formatting, and include code examples when relevant.
+When user asks to create/manage GitHub repos, files, or build Android apps — give step-by-step guidance.`;
+
+let cfg = {
+  url: 'http://192.168.1.5:8080/v1',
+  model: 'llama-3.1-8b-instruct',
+  key: '',
+  system: DEFAULT_SYSTEM
+};
+
+let chatHistory = [];      // [{role,content}]
+let displayHistory = [];   // [{id,role,content,time}]
+let controller = null;     // AbortController
+let isGenerating = false;
+
+const QUICK_CMDS = [
+  'Show my GitHub repos',
+  'Generate Android project',
+  'Create GitHub Actions APK workflow',
+  'Explain what is Gradle',
+  'Fix this error: [paste error]',
+  'Write a README for my project',
+  'What is PocketAPI?',
+  'How to build Android APK on phone?',
+  'Analyze this code: [paste code]',
+  'Create a new repository',
+];
+
+// ══════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════
+function init() {
+  loadConfig();
+  loadHistory();
+  renderPresets();
+  renderQuickBar();
+  populateSettingsForm();
+  updateProviderBadge();
+  updateStatusDot(true);
+
+  const inp = document.getElementById('msg-input');
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    autoResize(inp);
+  });
+  inp.addEventListener('input', () => autoResize(inp));
+
+  if (displayHistory.length === 0) {
+    addAIMessage(
+`# 👋 Welcome, VikramCPU!
+
+Your **AI Coding Agent** is ready. Here's what I can do:
+
+- 🔧 **Code Help** — Analyze bugs, explain code, generate files
+- 📱 **Android Dev** — Project setup, Gradle, APK build, GitHub Actions
+- 🐙 **GitHub** — Repo management, commits, workflows, issues
+- 🤖 **AI Chat** — Any coding question, 24/7
+
+**First:** Tap ⚙️ to set your **PocketAPI IP** or any provider.
+Then just type your question below! 🚀`
+    );
+  }
+}
+
+// ══════════════════════════════════════════
+//  CONFIG
+// ══════════════════════════════════════════
+function loadConfig() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) cfg = { ...cfg, ...JSON.parse(saved) };
+  } catch {}
+}
+
+function saveSettings() {
+  cfg.url    = document.getElementById('cfg-url').value.trim().replace(/\/$/, '');
+  cfg.model  = document.getElementById('cfg-model').value.trim();
+  cfg.key    = document.getElementById('cfg-key').value.trim();
+  cfg.system = document.getElementById('cfg-system').value.trim() || DEFAULT_SYSTEM;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg));
+  updateProviderBadge();
+  toggleSettings();
+  toast('✅ Settings saved!');
+  chatHistory = [];
+}
+
+function populateSettingsForm() {
+  document.getElementById('cfg-url').value    = cfg.url;
+  document.getElementById('cfg-model').value  = cfg.model;
+  document.getElementById('cfg-key').value    = cfg.key;
+  document.getElementById('cfg-system').value = cfg.system;
+}
+
+function applyPreset(i) {
+  const p = PRESETS[i];
+  document.getElementById('cfg-url').value   = p.url;
+  document.getElementById('cfg-model').value = p.model;
+  document.getElementById('cfg-key').value   = p.key;
+  document.querySelectorAll('.preset-btn').forEach((b,j) => b.classList.toggle('active', i===j));
+}
+
+function renderPresets() {
+  const c = document.getElementById('preset-btns');
+  c.innerHTML = PRESETS.map((p,i) =>
+    `<button class="preset-btn" onclick="applyPreset(${i})">${p.name}</button>`
+  ).join('');
+}
+
+function toggleSettings() {
+  const s = document.getElementById('settings');
+  s.classList.toggle('open');
+  if (s.classList.contains('open')) populateSettingsForm();
+}
+
+function updateProviderBadge() {
+  const b = document.getElementById('provider-badge');
+  if (cfg.url.includes('192.168') || cfg.url.includes('10.0') || cfg.url.includes('localhost'))
+    b.textContent = '📱 PocketAPI';
+  else if (cfg.url.includes('groq'))
+    b.textContent = '⚡ Groq';
+  else if (cfg.url.includes('openrouter'))
+    b.textContent = '🌐 OpenRouter';
+  else if (cfg.url.includes('nvidia'))
+    b.textContent = '🟢 NVIDIA';
+  else if (cfg.url.includes('openai'))
+    b.textContent = '🔵 OpenAI';
+  else
+    b.textContent = '🔧 Custom';
+}
+
+function updateStatusDot(ok) {
+  const d = document.getElementById('status-dot');
+  d.style.background = ok ? 'var(--green)' : 'var(--red)';
+}
+
+async function testConnection() {
+  const st = document.getElementById('conn-status');
+  st.innerHTML = '<span style="color:var(--yellow)">Testing...</span>';
+  try {
+    const url = document.getElementById('cfg-url').value.trim().replace(/\/$/, '');
+    const key = document.getElementById('cfg-key').value.trim();
+    const model = document.getElementById('cfg-model').value.trim();
+    const r = await fetch(`${url}/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(key ? { Authorization: `Bearer ${key}` } : {}) },
+      body: JSON.stringify({ model, messages: [{ role:'user', content:'Hi! Just say "connected"' }], max_tokens: 20, stream: false }),
+      signal: AbortSignal.timeout(10000)
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    st.innerHTML = '<span class="status-pill ok">✓ Connected!</span>';
+    updateStatusDot(true);
+  } catch (e) {
+    st.innerHTML = `<span class="status-pill err">✗ ${e.message}</span>`;
+    updateStatusDot(false);
+  }
+}
+
+// ══════════════════════════════════════════
+//  CHAT HISTORY
+// ══════════════════════════════════════════
+function loadHistory() {
+  try {
+    const h = localStorage.getItem(HISTORY_KEY);
+    if (h) {
+      displayHistory = JSON.parse(h);
+      displayHistory.forEach(m => {
+        renderMessage(m, false);
+        if (m.role !== 'system') chatHistory.push({ role: m.role, content: m.content });
+      });
+    }
+  } catch {}
+}
+
+function saveHistory() {
+  try {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(displayHistory.slice(-MAX_HISTORY)));
+  } catch {}
+}
+
+function clearChat() {
+  if (!confirm('Clear all chat history?')) return;
+  chatHistory = [];
+  displayHistory = [];
+  document.getElementById('messages').innerHTML = '';
+  localStorage.removeItem(HISTORY_KEY);
+  toast('Chat cleared');
+  addAIMessage('Chat cleared! How can I help you? 🚀');
+}
+
+// ══════════════════════════════════════════
+//  SEND MESSAGE
+// ══════════════════════════════════════════
+async function sendMessage() {
+  const inp = document.getElementById('msg-input');
+  const text = inp.value.trim();
+  if (!text || isGenerating) return;
+  inp.value = '';
+  autoResize(inp);
+
+  addUserMessage(text);
+  chatHistory.push({ role: 'user', content: text });
+
+  isGenerating = true;
+  setGeneratingUI(true);
+
+  const typingId = addTypingIndicator();
+
+  const messages = [
+    { role: 'system', content: cfg.system },
+    ...chatHistory.slice(-30)
+  ];
+
+  try {
+    controller = new AbortController();
+    const resp = await fetch(`${cfg.url}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(cfg.key ? { Authorization: `Bearer ${cfg.key}` } : {}),
+        ...(cfg.url.includes('openrouter') ? {
+          'HTTP-Referer': 'https://vikramcpu.github.io',
+          'X-Title': 'AI Coding Agent'
+        } : {})
+      },
+      body: JSON.stringify({
+        model: cfg.model,
+        messages,
+        max_tokens: 4096,
+        temperature: 0.7,
+        stream: true
+      }),
+      signal: controller.signal
+    });
+
+    removeTyping(typingId);
+
+    if (!resp.ok) {
+      const err = await resp.text();
+      throw new Error(`HTTP ${resp.status}: ${err.slice(0,200)}`);
+    }
+
+    const msgId = addAIMessage('', true);
+    let fullText = '';
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop() || '';
+      for (const line of lines) {
+        const t = line.trim();
+        if (!t.startsWith('data:')) continue;
+        const j = t.slice(5).trim();
+        if (j === '[DONE]') continue;
+        try {
+          const p = JSON.parse(j);
+          const token = p.choices?.[0]?.delta?.content || '';
+          if (token) {
+            fullText += token;
+            updateMessage(msgId, fullText);
+          }
+        } catch {}
+      }
+    }
+
+    if (!fullText) fullText = '_(empty response — check model/URL)_';
+    finalizeMessage(msgId, fullText);
+    chatHistory.push({ role: 'assistant', content: fullText });
+    displayHistory.push({ id: msgId, role: 'assistant', content: fullText, time: new Date().toLocaleTimeString() });
+    saveHistory();
+    updateStatusDot(true);
+
+  } catch (e) {
+    removeTyping(typingId);
+    if (e.name === 'AbortError') {
+      addAIMessage('⏹ _Stopped._');
+    } else {
+      updateStatusDot(false);
+      addAIMessage(`❌ **Error:** ${e.message}\n\n_Tip: Check your API URL in ⚙️ Settings. Make sure phone and laptop are on same WiFi for PocketAPI._`);
+    }
+  } finally {
+    isGenerating = false;
+    controller = null;
+    setGeneratingUI(false);
+  }
+}
+
+function stopGeneration() {
+  controller?.abort();
+}
+
+function setGeneratingUI(on) {
+  document.getElementById('send-btn').style.display = on ? 'none' : 'flex';
+  document.getElementById('stop-btn').style.display = on ? 'flex' : 'none';
+  document.getElementById('send-btn').disabled = on;
+}
+
+// ══════════════════════════════════════════
+//  RENDER
+// ══════════════════════════════════════════
+function addUserMessage(text) {
+  const id = 'msg_' + Date.now();
+  const m = { id, role: 'user', content: text, time: new Date().toLocaleTimeString() };
+  displayHistory.push(m);
+  renderMessage(m, true);
+  saveHistory();
+  return id;
+}
+
+function addAIMessage(text, streaming = false) {
+  const id = 'msg_' + Date.now() + '_ai';
+  renderMessage({ id, role: 'assistant', content: text, time: new Date().toLocaleTimeString() }, streaming);
+  return id;
+}
+
+function renderMessage(m, scroll = true) {
+  const wrap = document.getElementById('messages');
+  const isUser = m.role === 'user';
+
+  const div = document.createElement('div');
+  div.className = 'msg ' + (isUser ? 'user' : 'ai');
+  div.id = m.id;
+
+  div.innerHTML = `
+    <div class="avatar ${isUser ? 'user' : 'ai'}">${isUser ? '👤' : '🤖'}</div>
+    <div class="bubble">
+      <div class="content">${isUser ? escapeHtml(m.content) : renderMarkdown(m.content)}</div>
+      <div class="time">${m.time || ''}</div>
+    </div>`;
+  wrap.appendChild(div);
+  if (scroll) wrap.scrollTop = wrap.scrollHeight;
+}
+
+function updateMessage(id, text) {
+  const el = document.getElementById(id);
+  if (el) {
+    el.querySelector('.content').innerHTML = renderMarkdown(text) + '<span style="opacity:.4">▋</span>';
+    const wrap = document.getElementById('messages');
+    wrap.scrollTop = wrap.scrollHeight;
+  }
+}
+
+function finalizeMessage(id, text) {
+  const el = document.getElementById(id);
+  if (el) el.querySelector('.content').innerHTML = renderMarkdown(text);
+}
+
+function addTypingIndicator() {
+  const id = 'typing_' + Date.now();
+  const wrap = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg ai'; div.id = id;
+  div.innerHTML = `<div class="avatar ai">🤖</div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
+  wrap.appendChild(div);
+  wrap.scrollTop = wrap.scrollHeight;
+  return id;
+}
+
+function removeTyping(id) {
+  document.getElementById(id)?.remove();
+}
+
+// ══════════════════════════════════════════
+//  MARKDOWN (lightweight)
+// ══════════════════════════════════════════
+function renderMarkdown(text) {
+  if (!text) return '';
+  let html = escapeHtml(text);
+
+  // Code blocks
+  html = html.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) => {
+    const id = 'cb_' + Math.random().toString(36).slice(2);
+    return `<pre><button class="copy-btn" onclick="copyCode('${id}')">Copy</button><code id="${id}">${code.trim()}</code></pre>`;
+  });
+
+  // Inline code
+  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+  // Headers
+  html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+  html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+  html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+
+  // Bold
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/__(.+?)__/g, '<strong>$1</strong>');
+
+  // Italic
+  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+  // Bullets
+  html = html.replace(/^[*\-] (.+)$/gm, '<li>$1</li>');
+  html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+
+  // Numbered list
+  html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+
+  // Links
+  html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+
+  // Line breaks
+  html = html.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>');
+  if (!html.startsWith('<')) html = '<p>' + html + '</p>';
+
+  return html;
+}
+
+function escapeHtml(text) {
+  return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function copyCode(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  navigator.clipboard?.writeText(el.innerText).then(() => toast('Copied!'));
+}
+
+// ══════════════════════════════════════════
+//  QUICK BAR
+// ══════════════════════════════════════════
+function renderQuickBar() {
+  const bar = document.getElementById('quick-bar');
+  bar.innerHTML = QUICK_CMDS.map(q =>
+    `<button class="quick-btn" onclick="useQuick('${q.replace(/'/g,"\\'")}')">
+      ${q.length > 28 ? q.slice(0,28) + '…' : q}
+    </button>`
+  ).join('');
+}
+
+function useQuick(text) {
+  const inp = document.getElementById('msg-input');
+  inp.value = text;
+  inp.focus();
+  autoResize(inp);
+}
+
+// ══════════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════════
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function toast(msg, dur = 2000) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), dur);
+}
+
+// ══════════════════════════════════════════
+//  START
+// ══════════════════════════════════════════
+init();
+</script>
+</body>
+</html>
