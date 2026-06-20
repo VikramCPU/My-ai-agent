@@ -1,0 +1,153 @@
+Bhai, teri PocketAPI Server2 app ka full information – ekdum detail mein likh kar de raha hoon. Tu isse README file, ya app ke About section mein use kar sakta hai.
+
+---
+
+📱 PocketAPI Server2 – Complete App Information
+
+App Name
+
+PocketAPI Server2 (v2.2.0 – Custom Engine)
+
+Developer
+
+Abdul Kalam Azad
+
+Platform
+
+Android (minimum SDK 26, target SDK 34)
+
+Description
+
+Turn your Android phone into a powerful AI proxy server. Run local AI server directly on your mobile device, then call it from any browser, terminal, or other app on the same Wi-Fi network.
+
+---
+
+🚀 Key Features
+
+Feature Details
+AI Provider Support OpenAI, Groq, Gemini, XAI (Grok), OpenRouter, and any custom provider
+Multiple API Keys Add unlimited keys per provider, auto-fallback if one fails
+Auto Key Rotation If current key fails (quota, rate limit, etc.), automatically try next key
+Built-in Terminal Command-line interface inside the app – no external Termux needed
+Chat History All conversations saved in Room database, persists across app restarts
+Encrypted Storage API keys stored with AES‑256 encryption (AndroidX Security Crypto)
+Port Management Change server port (8080-9000), auto conflict resolution
+Boot Auto-Start Server restarts automatically after device reboot (with saved keys and port)
+Diagnostic Tools Test keys, view logs, reset chat, check provider health
+Multi-language Help Built-in help section in English and Hindi
+
+---
+
+🖥️ Server Endpoints (HTTP API)
+
+Once server is running on http://your-phone-ip:8080, you can call:
+
+Endpoint Method Purpose Example
+/chat GET / POST Send prompt to AI http://IP:8080/chat?prompt=Hello
+/status GET Server status, port, key count curl http://IP:8080/status
+/health GET Working keys per provider curl http://IP:8080/health
+/logs GET Last 20 requests with provider/key info curl http://IP:8080/logs
+/admin/rotate-key POST Manually switch to next key curl -X POST http://IP:8080/admin/rotate-key
+/admin/port?port=8081 POST Change server port curl -X POST http://IP:8080/admin/port?port=8081
+
+---
+
+📦 Supported AI Providers & Models
+
+Provider Free Tier Model Name (example) Base URL
+Groq ✅ Free llama-3.3-70b-versatile https://api.groq.com/openai/v1
+OpenRouter ✅ Free (limited) openrouter/free (auto-select) https://openrouter.ai/api/v1
+OpenAI ❌ Paid gpt-3.5-turbo, gpt-4o-mini https://api.openai.com/v1
+Gemini ❌ Paid (free trial) gemini-1.5-pro, gemini-2.0-flash-exp (included in key)
+XAI (Grok) ❌ Paid grok-2-latest, grok-4.3 https://api.x.ai/v1
+Custom – Any model Any custom URL
+
+Recommendation: Use Groq or OpenRouter for free, fast responses.
+
+---
+
+🧪 Built-in Terminal Commands
+
+Open Terminal tab and type:
+
+Command What it does
+status Show server status, port, key count
+chat hello Send message to AI
+health Show which providers/keys are working
+logs Last 10 requests
+rotate Switch to next available key
+port 8081 Change server port
+keys list Show all saved keys
+keys test Test all keys
+keys add <provider> <key> <model> <base_url> Add new key
+keys remove <id> Delete key by ID
+clear Clear terminal screen
+help Show all commands
+
+---
+
+⚙️ How to Use (Quick Start)
+
+1. Get an API key (e.g., from Groq Console)
+2. Open app → Settings → Add API Provider
+   · Select provider (Groq / Custom / etc.)
+   · Paste API key
+   · Model name (optional)
+   · Base URL (for custom providers)
+3. Go to Servers tab → Toggle "START ENGINE" ON
+4. Open Assistant tab → Type message → Send → Real AI reply appears
+5. To test from browser: http://<your-phone-ip>:8080/chat?prompt=Hi
+
+---
+
+🔒 Security & Privacy
+
+· API keys stored encrypted (AES‑256, Android KeyStore)
+· No external servers – everything runs locally on your phone
+· Chat history stored locally in Room database
+· No analytics, no tracking
+
+---
+
+📁 App Backup & Restore
+
+· Code backup: ZIP the PocketAPI Server2 folder (remove build/, .gradle/, .idea/ first)
+· Keystore file: Save .jks / .keystore file separately – required for Play Store updates
+· Restore: Extract ZIP → Open in Android Studio → Sync Gradle → Run
+
+---
+
+🛠️ Known Issues & Troubleshooting
+
+Problem Solution
+404 Model not found Update model name (e.g., grok-beta → grok-2-latest)
+403 Permission denied XAI needs credits – use Groq or OpenRouter instead
+CLEARTEXT not permitted AndroidManifest.xml: android:usesCleartextTraffic="true"
+Key test fails Check key format (Groq: gsk_..., OpenRouter: sk-or-v1-...)
+Server won't start Change port in Settings (e.g., 8081)
+
+---
+
+📱 App Interface
+
+Bottom navigation has 4 tabs:
+
+· Servers – Start/stop server, see IP and port, request count
+· Assistant – Chat with AI (real responses, chat history)
+· Settings – API key management, port config, diagnostics, about & help
+· Terminal – Command-line control
+
+---
+
+🧑‍💻 Developer Message
+
+Made with ❤️ by Abdul Kalam Azad
+For developers & AI enthusiasts who want to run their own AI proxy on mobile.
+
+---
+
+📌 Version History
+
+· v2.2.0 (Current) – Custom provider support, OpenRouter integration, built-in terminal, chat order fix, multiple keys per provider.
+· v2.1.0 – Hybrid node, improved key management.
+· v2.0.0 – Real AI calls, encrypted storage, Room database.
