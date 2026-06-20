@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "m3yeRa-rdvCHj63ixT4If"
+uri = "file://mobile-agent/AI-Agent-Mobile.tar.gz"
+type = "unspecified"
+title = "AI Coding Agent — Mobile HTML (index.html inside)"

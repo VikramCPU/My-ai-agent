@@ -1,8 +1,10 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { runAutoFixLoop } from '../services/build.service';
-import { githubService, FileCommit } from '../services/github.service';
+import { GitHubService, FileCommit } from '../services/github.service';
 import { aiService } from '../services/ai.service';
 import { logger } from '../utils/logger';
+
+const gh = (req: Request) => GitHubService.fromRequest(req);
 
 const router = Router();
 const wrap = (fn: Function) => (req: Request, res: Response, next: NextFunction) =>
@@ -62,7 +64,7 @@ router.post('/android/generate-and-push', wrap(async (req: Request, res: Respons
 
   // 5. Commit all files to GitHub in one shot
   const files: FileCommit[] = Object.entries(projectFiles).map(([path, content]) => ({ path, content }));
-  const commit = await githubService.commitMultipleFiles(owner, repo, files, `🤖 Generate Android project: ${app_name}`, branch);
+  const commit = await gh(req).commitMultipleFiles(owner, repo, files, `🤖 Generate Android project: ${app_name}`, branch);
 
   logger.info('Android project pushed', { sha: commit.sha, fileCount: files.length });
   res.json({
@@ -82,7 +84,7 @@ router.post('/commit-files', wrap(async (req: Request, res: Response) => {
   if (!owner || !repo || !files || !message) {
     return res.status(400).json({ success: false, error: 'owner, repo, files, message required' });
   }
-  const commit = await githubService.commitMultipleFiles(owner, repo, files as FileCommit[], message, branch);
+  const commit = await gh(req).commitMultipleFiles(owner, repo, files as FileCommit[], message, branch);
   res.json({ success: true, data: commit });
 }));
 
@@ -115,7 +117,7 @@ router.post('/push-source', wrap(async (req: Request, res: Response) => {
 
   const files = collectFiles(ROOT, ROOT);
   logger.info('Pushing source to GitHub', { owner, repo, fileCount: files.length });
-  const commit = await githubService.commitMultipleFiles(owner, repo, files, '🚀 Sync: AI Coding Agent full source', branch);
+  const commit = await gh(req).commitMultipleFiles(owner, repo, files, '🚀 Sync: AI Coding Agent full source', branch);
   res.json({ success: true, data: { ...commit, fileCount: files.length } });
 }));
 

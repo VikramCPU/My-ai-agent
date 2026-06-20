@@ -1,7 +1,21 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { aiService, Message, getActiveConfig } from '../services/ai.service';
+import { aiService, Message, getActiveConfig, ProviderConfig } from '../services/ai.service';
 import { parseAndExecuteAction } from '../services/action.service';
 import axios from 'axios';
+
+/** Merge request headers into provider config (mobile client overrides) */
+function cfgFromRequest(req: Request): ProviderConfig {
+  const base = getActiveConfig();
+  const headerKey   = req.headers['x-ai-key']   as string | undefined;
+  const headerUrl   = req.headers['x-ai-url']   as string | undefined;
+  const headerModel = req.headers['x-ai-model'] as string | undefined;
+  return {
+    ...base,
+    apiKey:  headerKey   || base.apiKey,
+    baseURL: headerUrl   || base.baseURL,
+    model:   headerModel || base.model,
+  };
+}
 
 const router = Router();
 const wrap = (fn: Function) => (req: Request, res: Response, next: NextFunction) =>
@@ -35,7 +49,7 @@ router.post('/chat/stream', async (req: Request, res: Response) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.flushHeaders();
 
-  const cfg = getActiveConfig();
+  const cfg = cfgFromRequest(req); // uses X-AI-Key / X-AI-URL / X-AI-Model headers if present
 
   const sendToken = (token: string) => res.write(`data: ${JSON.stringify({ token })}\n\n`);
   const sendDone = (fullText: string, action?: any) => {

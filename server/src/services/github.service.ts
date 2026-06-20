@@ -10,10 +10,16 @@ export interface FileCommit {
 export class GitHubService {
   private octokit: Octokit;
 
-  constructor() {
-    const token = process.env.GITHUB_PAT;
-    if (!token) throw new Error('GITHUB_PAT environment variable is not set');
-    this.octokit = new Octokit({ auth: token });
+  constructor(token?: string) {
+    const t = token || process.env.GITHUB_PAT;
+    if (!t) throw new Error('GitHub token not configured. Set GITHUB_PAT env var or pass X-GitHub-Token header.');
+    this.octokit = new Octokit({ auth: t });
+  }
+
+  /** Create instance using request header token, falling back to env var */
+  static fromRequest(req: { headers: Record<string, any> }): GitHubService {
+    const headerToken = req.headers['x-github-token'] as string | undefined;
+    return new GitHubService(headerToken || process.env.GITHUB_PAT);
   }
 
   async getAuthenticatedUser() {
